@@ -110,49 +110,49 @@ def plot_3d_path(ax, ys, color, filename="fig.pdf"):
   ax.plot(x0, x1, x2, lw=0.5, color=color)
   plt.savefig(filename)
  
-# if __name__ == 'main':
-#     # --- could go with just a sine wav ---
+if __name__ == 'main':
+   # --- could go with just a sine wav ---
 
-u = odeint_rk4(f, 
+  u = odeint_rk4(f, 
             jnp.array([5., 5., 5.]), 
             jnp.linspace(0, 10., 10_000), 
             28., 10., 8./3)
 
-# fig = plt.figure(figsize=(6, 4), dpi=150)
-# ax = fig.add_subplot(projection='3d')
-# plot_3d_path(ax, u, 'blue', "lorenz.pdf");
+  fig = plt.figure(figsize=(6, 4), dpi=150)
+  ax = fig.add_subplot(projection='3d')
+  plot_3d_path(ax, u, 'blue', "lorenz.pdf");
 
-k = random.key(42) # Douglas Adams!
-k, k1, k2, k3, k4 = random.split(k, 5)
+  k = random.key(42) # Douglas Adams!
+  k, k1, k2, k3, k4 = random.split(k, 5)
 
 # --- set up layers --- #
-sparse_mask = (random.uniform(k1, (100, 100)) < 0.1).astype(jnp.float32)
-w_res_raw = random.normal(k3, (100, 100))
-w_res_sparse = w_res_raw * sparse_mask
+  sparse_mask = (random.uniform(k1, (100, 100)) < 0.1).astype(jnp.float32)
+  w_res_raw = random.normal(k3, (100, 100))
+  w_res_sparse = w_res_raw * sparse_mask
 
-w_in = random.normal(k4, (100, 4))  # x, y, z of lorenz plus bias
+  w_in = random.normal(k4, (100, 4))  # x, y, z of lorenz plus bias
 
 # --- scale spectral radius --- #
-eigvals = jnp.linalg.eigvals(w_res_sparse)
-w_res = w_res_sparse * (0.9 / jnp.max(jnp.abs(eigvals)))
+  eigvals = jnp.linalg.eigvals(w_res_sparse)
+  w_res = w_res_sparse * (0.9 / jnp.max(jnp.abs(eigvals)))
 
 # --- run reservoir --- #
-hidden_states = reservoir(u, w_in, w_res)
+  hidden_states = reservoir(u, w_in, w_res)
 
-# # --- train readout ---
-h_aug = jnp.concatenate([hidden_states, jnp.ones((hidden_states.shape[0], 1))], axis=1)
-w_out = jnp.linalg.lstsq(h_aug, u, rcond=None)[0]
+# --- train readout ---
+  h_aug = jnp.concatenate([hidden_states, jnp.ones((hidden_states.shape[0], 1))], axis=1)
+  w_out = jnp.linalg.lstsq(h_aug, u, rcond=None)[0]
 
-# # --- TODO ---
-# # speed up the least squares with a cholesky decomp
+  # --- TODO ---
+  # speed up the least squares with a cholesky decomp
 
-y_pred = predict(u, w_in, w_res)
+  y_pred = predict(u, w_in, w_res)
 
-fig = plt.figure(figsize=(6, 4), dpi=150)
-ax = fig.add_subplot(projection='3d')
-plot_3d_path(ax, y_pred, 'violet', filename="reservoir_lorenz.pdf");
+  fig = plt.figure(figsize=(6, 4), dpi=150)
+  ax = fig.add_subplot(projection='3d')
+  plot_3d_path(ax, y_pred, 'violet', filename="reservoir_lorenz.pdf");
 
-print(f"### MSE: {((u - y_pred)**2).mean()} ###")
+  print(f"### MSE: {((u - y_pred)**2).mean()} ###")
     
     
 
